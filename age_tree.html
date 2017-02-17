@@ -8,7 +8,7 @@
   <body>
     <script type="text/javascript">
       //Dictionary for table headers
-      const m_dict = {
+      const dict = {
         "NAME": "State", "B01001_001E": "Total Counted", "B01001_003E": "Male <5yrs",
         "B01001_004E": "Male 5-9yrs", "B01001_005E": "Male 10-14yrs", "B01001_006E": "Male 15-17yrs",
         "B01001_007E": "Male 18-19yrs", "B01001_008E": "Male 20yrs", "B01001_009E": "Male 21yrs",
@@ -17,10 +17,7 @@
         "B01001_016E": "Male 50-54yrs", "B01001_017E": "Male 55-59yrs", "B01001_018E": "Male 60-61yrs",
         "B01001_019E": "Male 62-64yrs", "B01001_020E": "Male 65-66yrs", "B01001_021E": "Male 67-69yrs",
         "B01001_022E": "Male 70-74yrs", "B01001_023E": "Male 75-79yrs", "B01001_024E": "Male 80-84yrs",
-        "B01001_025E": "Male >84yrs", "state": "State #", "B01001_002E": "# Males"
-      };
-      const f_dict = {
-        "NAME": "State", "B01001_001E": "Total Counted", "B01001_027E": "Female <5yrs",
+        "B01001_025E": "Male >84yrs", "state": "State #", "B01001_002E": "Males", "B01001_027E": "Female <5yrs",
         "B01001_028E": "Female 5-9yrs", "B01001_029E": "Female 10-14yrs", "B01001_030E": "Female 15-17yrs",
         "B01001_031E": "Female 18-19yrs", "B01001_032E": "Female 20yrs", "B01001_033E": "Female 21yrs",
         "B01001_034E": "Female 22-24yrs", "B01001_035E": "Female 25-29yrs", "B01001_036E": "Female 30-34yrs",
@@ -28,7 +25,7 @@
         "B01001_040E": "Female 50-54yrs", "B01001_041E": "Female 55-59yrs", "B01001_042E": "Female 60-61yrs",
         "B01001_043E": "Female 62-64yrs", "B01001_044E": "Female 65-66yrs", "B01001_045E": "Female 67-69yrs",
         "B01001_046E": "Female 70-74yrs", "B01001_047E": "Female 75-79yrs", "B01001_048E": "Female 80-84yrs",
-        "B01001_049E": "Female >84yrs", "state": "State #", "B01001_026E": "# Females"
+        "B01001_049E": "Female >84yrs", "B01001_026E": "Females"
       };
       //Query string for US Census API
       const male_population_variables = "B01001_001E,B01001_002E,B01001_003E,B01001_004E,B01001_005E,"+
@@ -44,9 +41,21 @@
                                             "B01001_038E,B01001_039E,B01001_040E,B01001_041E,"+
                                             "B01001_042E,B01001_043E,B01001_044E,B01001_045E,"+
                                             "B01001_046E,B01001_047E,B01001_048E,B01001_049E";
+      let m_data = [];
+      let f_data = [];
+      const setMaleData = (data) => {
+        m_data = data;
+        getData(female_population_variables, my_key, setFemaleData);
+      }
+      const setFemaleData = (data) => {
+        f_data = data;
+        // createTable(m_data);
+        // createTable(f_data);
+        makeAgeTrees(m_data, f_data)
+      }
       //Creates HTML table element to be displayed for male data
-      const createTable = (data, dict) =>{
-        let table = "<table class='t'>";
+      const createTable = (data) =>{
+        let table = "<table class='t' id="+dict[data[0][2]]+">";
         for(let row in data){
           table += "<tr>";
           //Create each row from data
@@ -54,9 +63,9 @@
             let el = "td"
             if(row == 0){
               el = "th";
-              table += "<"+el+" class='t_header'>" + dict[data[row][col]] + "</"+el+">";
+              table += "<"+el+" class='t-header'>" + dict[data[row][col]] + "</"+el+">";
             }else{
-              table += "<"+el+" class='t_data'>" + data[row][col] + "</"+el+">";
+              table += "<"+el+" class='t-data'>" + data[row][col] + "</"+el+">";
             }
           }
           table += "</tr>";
@@ -67,25 +76,170 @@
       //US Census api key
       const my_key = "461c4c63a0015374914ba3a283c2456bb5b60d18"
       //AJAX request for population data -- returns array
-      const getData = (variables, key, dict, callback) => {
+      const getData = (variables, key, callback) => {
+        let data = [];
         $.ajax({
           url:("https://api.census.gov/data/2015/acs1?get=NAME,"+variables+"&for=state:*&key="+key),
           dataType:'json',
           type: 'get',
           success:function(response){
-            callback(response, dict);
-            return response;
+            callback(response);
           }
         });
       }
 
+      const makeAgeBranches = (data, row, age_ranges, gender) => {
+        let html = "";
+        let state = data[row][0]
+        html += "<ul class='"+gender+"-branches' id='"+gender+"-"+state+"'>";
+        let label = age_ranges.length - 1;
+        for(let i=data[row].length-2; i>2; --i){
+          //Take into account uneven distribution of data and normalize
+          let total_age;
+          if(i === 10){
+            total_age = parseFloat(data[row][i]) + parseFloat(data[row][i-1]) + parseFloat(data[row][i-2]);
+            i -= 2;
+          }else if(i === 21 || i === 19 || i === 7){
+            total_age = parseFloat(data[row][i]) + parseFloat(data[row][i-1]);
+            --i;
+          }else{
+            total_age = parseFloat(data[row][i]);
+          }
+          let width = 2000 * total_age/parseFloat(data[row][1]);
+          html += "<li class='"+gender+"-branch' id='"+gender+"-"+state+"-"+age_ranges[label]+"' style='width: "+width+"%'><p>"+total_age+"</p></li>";
+          --label;
+        }
+        html += "</ul>";
+        return html;
+      }
+
+      const makeAgeLabels = (age_ranges) => {
+        let html = "";
+        html+= "<div class='divider'><ul class='age_ranges'>"
+        for(let r in age_ranges){
+          let l = age_ranges.length-1;
+          html += "<li class='age_range'><p>"+age_ranges[l-r]+"</p></li>";
+        }
+        html += "</ul></div>";
+        return html;
+      }
+
+      const makeAgeTrees = (m_data, f_data) => {
+        const age_ranges = ["<5", "5-9", "10-14", "15-19", "20-24", "25-29",
+                            "30-34", "35-39", "40-44", "45-49", "50-54",
+                            "55-59", "60-64", "65-69", "70-74", "75-79",
+                            "80-84", ">84"];
+        let html = "<div class='trees-container'>";
+        for(let row=1;row<m_data.length;++row){
+          let state = m_data[row][0];
+          html += "<div class='state-tree' id='"+state+"'>";
+          html += "<div class='state-header'><p>"+state+"</p></div>"
+          html += "<div class='data'>";
+          html += makeAgeBranches(m_data, row, age_ranges, "m");
+          html += makeAgeLabels(age_ranges);
+          html += makeAgeBranches(f_data, row, age_ranges, "f");
+          html += "</div></div>";
+        }
+        html += "</div>";
+        document.body.innerHTML += html;
+      }
+
       //Call functions
       $(document).ready(function () {
-        getData(male_population_variables, my_key, m_dict, createTable);
-        getData(female_population_variables, my_key, f_dict, createTable);
-
+        getData(male_population_variables, my_key, setMaleData);
+        // getData(female_population_variables, my_key, createTable);
+        //getData(male_population_variables+","+female_population_variables.substr(10), my_key, makeAgeTrees)
       });
     </script>
+    <style media="screen">
+      ul{
+        list-style: none;
+        color: black;
+        margin: 0;
+        width: 30%;
+        padding: 0;
+        margin: 0;
+      }
+
+      ul.m-branches {
+        -webkit-transform: scaleX(-1);
+        -moz-transform: scaleX(-1);
+        transform: scaleX(-1);
+        text-align: right;
+        padding: 0;
+      }
+
+      p{
+        margin: 0;
+      }
+
+      ul.m-branches p{
+        -webkit-transform: scaleX(-1);
+        -moz-transform: scaleX(-1);
+        transform: scaleX(-1);
+        min-width: 100px;
+      }
+
+      li{
+        margin-bottom: 5px;
+      }
+
+      li:last-child {
+        margin-bottom: 0;
+      }
+
+      li.m-branch{
+        background-color: rgba(206, 173, 90, 1);
+        padding: 0 15px;
+      }
+
+      li.f-branch {
+        background-color: rgba(229, 72, 72, 1);
+        padding: 0 15px;
+      }
+
+      .data {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+      }
+
+      .divider {
+        width: 70px;
+      }
+
+      ul.age_ranges {
+        padding: 0;
+        width: 70px;
+        background-color: rgba(188, 141, 227, 1);
+      }
+
+      li.age_range {text-align: center;}
+
+      div.state-tree {
+        display: flex;
+        flex-direction: column;
+        width: 48%;
+        margin: 5px auto;
+        border: 3px solid rgba(188, 141, 227, 1);
+        background-color: rgba(167, 114, 207, 1);
+      }
+
+      .state-header {
+        text-align: center;
+        width: 100%;
+        background-color: rgba(188, 141, 227, 1);
+        height: 30px;
+        line-height: 30px;
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .trees-container {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      </style>
 
   </body>
 </html>
