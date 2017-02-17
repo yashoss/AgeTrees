@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Population Visualization</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      //Dictionary for table headers
+      const m_dict = {
+        "NAME": "State", "B01001_001E": "Total Counted", "B01001_003E": "Male <5yrs",
+        "B01001_004E": "Male 5-9yrs", "B01001_005E": "Male 10-14yrs", "B01001_006E": "Male 15-17yrs",
+        "B01001_007E": "Male 18-19yrs", "B01001_008E": "Male 20yrs", "B01001_009E": "Male 21yrs",
+        "B01001_010E": "Male 22-24yrs", "B01001_011E": "Male 25-29yrs", "B01001_012E": "Male 30-34yrs",
+        "B01001_013E": "Male 35-39yrs", "B01001_014E": "Male 40-44yrs", "B01001_015E": "Male 45-49yrs",
+        "B01001_016E": "Male 50-54yrs", "B01001_017E": "Male 55-59yrs", "B01001_018E": "Male 60-61yrs",
+        "B01001_019E": "Male 62-64yrs", "B01001_020E": "Male 65-66yrs", "B01001_021E": "Male 67-69yrs",
+        "B01001_022E": "Male 70-74yrs", "B01001_023E": "Male 75-79yrs", "B01001_024E": "Male 80-84yrs",
+        "B01001_025E": "Male >84yrs", "state": "State #", "B01001_002E": "# Males"
+      };
+      const f_dict = {
+        "NAME": "State", "B01001_001E": "Total Counted", "B01001_027E": "Female <5yrs",
+        "B01001_028E": "Female 5-9yrs", "B01001_029E": "Female 10-14yrs", "B01001_030E": "Female 15-17yrs",
+        "B01001_031E": "Female 18-19yrs", "B01001_032E": "Female 20yrs", "B01001_033E": "Female 21yrs",
+        "B01001_034E": "Female 22-24yrs", "B01001_035E": "Female 25-29yrs", "B01001_036E": "Female 30-34yrs",
+        "B01001_037E": "Female 35-39yrs", "B01001_038E": "Female 40-44yrs", "B01001_039E": "Female 45-49yrs",
+        "B01001_040E": "Female 50-54yrs", "B01001_041E": "Female 55-59yrs", "B01001_042E": "Female 60-61yrs",
+        "B01001_043E": "Female 62-64yrs", "B01001_044E": "Female 65-66yrs", "B01001_045E": "Female 67-69yrs",
+        "B01001_046E": "Female 70-74yrs", "B01001_047E": "Female 75-79yrs", "B01001_048E": "Female 80-84yrs",
+        "B01001_049E": "Female >84yrs", "state": "State #", "B01001_026E": "# Females"
+      };
+      //Query string for US Census API
+      const male_population_variables = "B01001_001E,B01001_002E,B01001_003E,B01001_004E,B01001_005E,"+
+                                          "B01001_006E,B01001_007E,B01001_008E,B01001_009E,"+
+                                          "B01001_010E,B01001_011E,B01001_012E,B01001_013E,"+
+                                          "B01001_014E,B01001_015E,B01001_016E,B01001_017E,"+
+                                          "B01001_018E,B01001_019E,B01001_020E,B01001_021E,"+
+                                          "B01001_022E,B01001_023E,B01001_024E,B01001_025E";
+
+      const female_population_variables = "B01001_001E,B01001_026E,B01001_027E,B01001_028E,B01001_029E,"+
+                                            "B01001_030E,B01001_031E,B01001_032E,B01001_033E,"+
+                                            "B01001_034E,B01001_035E,B01001_036E,B01001_037E,"+
+                                            "B01001_038E,B01001_039E,B01001_040E,B01001_041E,"+
+                                            "B01001_042E,B01001_043E,B01001_044E,B01001_045E,"+
+                                            "B01001_046E,B01001_047E,B01001_048E,B01001_049E";
+      //Creates HTML table element to be displayed for male data
+      const createTable = (data, dict) =>{
+        let table = "<table class='t'>";
+        for(let row in data){
+          table += "<tr>";
+          //Create each row from data
+          for(let col=0; col<data[row].length-1; ++col){
+            let el = "td"
+            if(row == 0){
+              el = "th";
+              table += "<"+el+" class='t_header'>" + dict[data[row][col]] + "</"+el+">";
+            }else{
+              table += "<"+el+" class='t_data'>" + data[row][col] + "</"+el+">";
+            }
+          }
+          table += "</tr>";
+        }
+        table += "</table>";
+        document.body.innerHTML += table;
+      }
+      //US Census api key
+      const my_key = "461c4c63a0015374914ba3a283c2456bb5b60d18"
+      //AJAX request for population data -- returns array
+      const getData = (variables, key, dict, callback) => {
+        $.ajax({
+          url:("https://api.census.gov/data/2015/acs1?get=NAME,"+variables+"&for=state:*&key="+key),
+          dataType:'json',
+          type: 'get',
+          success:function(response){
+            callback(response, dict);
+            return response;
+          }
+        });
+      }
+
+      //Call functions
+      $(document).ready(function () {
+        getData(male_population_variables, my_key, m_dict, createTable);
+        getData(female_population_variables, my_key, f_dict, createTable);
+
+      });
+    </script>
+
+  </body>
+</html>
