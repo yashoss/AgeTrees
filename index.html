@@ -5,9 +5,11 @@
     <title>Population Visualization</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link data-require="fontawesome@*" data-semver="4.5.0" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.css" />
   </head>
   <body>
     <div class="title-container"><h1 class="title">2016 Voting Data for Democratic and Republican Candidates and Age Demographic by State</h1></div>
+    <div class="loading-icon"></div>
     <script type="text/javascript">
       //Dictionary for table headers
       const dict = {
@@ -72,9 +74,6 @@
       }
       const setFemaleData = (data) => {
         f_data = data;
-        //TODO: Uncomment to see raw data in a table
-        // createTable(m_data);
-        // createTable(f_data);
         makeAgeTrees(m_data, f_data)
       }
       //Creates HTML table element to be displayed for male data
@@ -180,7 +179,6 @@
           }
           html += "<div class='state-tree' id='"+state+"'>";
           html += "<div class='state-header'><h4 class='male-label'><p class='gender-key'>Male</p>  &#9794</h4><p>"+state+"</p><h4 class='female-label'>&#9792 <p class='gender-key'>Female</p></h4></div>";
-          // html += "<div class='labels'><h4 class='male-label'>&#9794</h4><h4 class='female-label'>&#9792</h4></div>";
           html += "<div class='data'>" +
                   makeAgeBranches(m_data, row, age_ranges, "m") +
                   makeAgeLabels(age_ranges) +
@@ -192,13 +190,12 @@
         }
         html += "</div>";
         document.body.innerHTML += html;
+        $(".loading-icon").hide();
       }
 
       //On page load, grab data from server
       $(document).ready(function () {
         getData(male_population_variables, my_key, setMaleData);
-        // getData(female_population_variables, my_key, createTable);
-        //getData(male_population_variables+","+female_population_variables.substr(10), my_key, makeAgeTrees)
       });
       //END JAVASCRIPT
     </script>
@@ -326,6 +323,23 @@
 
       p.gender-key {
         font-size: 18px;
+      }
+
+      .loading-icon {
+        position: relative;
+        width: 20px;
+        height: 20px;
+        margin:50px auto;
+        -webkit-animation: fa-spin 2s infinite linear;
+        animation: fa-spin 2s infinite linear;
+      }
+
+      .loading-icon:before {
+        content: "\f110";
+        font-family: FontAwesome;
+        font-size:20px;
+        position: absolute;
+        top: 0;
       }
       </style>
 
